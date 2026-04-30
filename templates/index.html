@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Property Valuation Analytics</title>
+    <!-- Prevent Theme FOUC -->
+    <script>
+        const savedTheme = localStorage.getItem('theme') || 'system';
+        if (savedTheme !== 'system') {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Ames Analytics</span>
+            </div>
+            <nav class="nav-menu" id="nav-menu">
+                <a href="#" class="nav-item active" data-target="view-model"><i class="fa-solid fa-calculator"></i> Valuation Model</a>
+                <a href="#" class="nav-item" data-target="view-trends"><i class="fa-solid fa-chart-pie"></i> Market Trends</a>
+                <a href="#" class="nav-item" data-target="view-reports"><i class="fa-solid fa-file-contract"></i> Reports</a>
+                <a href="#" class="nav-item" data-target="view-settings"><i class="fa-solid fa-gear"></i> Settings</a>
+            </nav>
+        </aside>
+        
+        <!-- Main Application Area -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="breadcrumb" id="breadcrumb">Models / <strong>Valuation Model</strong></div>
+                <div class="topbar-right">
+                    <div class="theme-switcher">
+                        <button class="theme-btn" onclick="setTheme('light')" title="Light Mode"><i class="fa-solid fa-sun"></i></button>
+                        <button class="theme-btn" onclick="setTheme('dark')" title="Dark Mode"><i class="fa-solid fa-moon"></i></button>
+                        <button class="theme-btn" onclick="setTheme('system')" title="System Default"><i class="fa-solid fa-desktop"></i></button>
+                    </div>
+                    <div class="user-profile">
+                        <div class="avatar">A</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-wrapper">
+                <!-- VIEW: VALUATION MODEL -->
+                <div id="view-model" class="view-section active">
+                    <div class="page-header">
+                        <h1>Property Valuation Model</h1>
+                        <p>Enter the property parameters to generate an estimated market value using the Random Forest regression algorithm.</p>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <!-- Input Form Card -->
+                        <div class="card form-card">
+                            <div class="card-header">
+                                <h2>Input Parameters</h2>
+                            </div>
+                            <div class="card-body">
+                                <form id="prediction-form">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="gr_liv_area">Living Area (sq ft) <span class="required">*</span></label>
+                                            <div class="number-wrapper">
+                                                <input type="number" id="gr_liv_area" name="gr_liv_area" placeholder="e.g. 1500" min="0" required>
+                                                <div class="spinner-controls">
+                                                    <button type="button" class="spinner-btn up" onclick="this.parentNode.previousElementSibling.stepUp()"><i class="fa-solid fa-chevron-up"></i></button>
+                                                    <button type="button" class="spinner-btn down" onclick="this.parentNode.previousElementSibling.stepDown()"><i class="fa-solid fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="year_built">Year Built <span class="required">*</span></label>
+                                            <div class="number-wrapper">
+                                                <input type="number" id="year_built" name="year_built" placeholder="e.g. 2005" min="1800" max="2026" required>
+                                                <div class="spinner-controls">
+                                                    <button type="button" class="spinner-btn up" onclick="this.parentNode.previousElementSibling.stepUp()"><i class="fa-solid fa-chevron-up"></i></button>
+                                                    <button type="button" class="spinner-btn down" onclick="this.parentNode.previousElementSibling.stepDown()"><i class="fa-solid fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="bedroom_abvgr">Bedrooms (Above Grade) <span class="required">*</span></label>
+                                            <div class="number-wrapper">
+                                                <input type="number" id="bedroom_abvgr" name="bedroom_abvgr" placeholder="e.g. 3" min="0" required>
+                                                <div class="spinner-controls">
+                                                    <button type="button" class="spinner-btn up" onclick="this.parentNode.previousElementSibling.stepUp()"><i class="fa-solid fa-chevron-up"></i></button>
+                                                    <button type="button" class="spinner-btn down" onclick="this.parentNode.previousElementSibling.stepDown()"><i class="fa-solid fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="full_bath">Full Bathrooms <span class="required">*</span></label>
+                                            <div class="number-wrapper">
+                                                <input type="number" id="full_bath" name="full_bath" placeholder="e.g. 2" min="0" required>
+                                                <div class="spinner-controls">
+                                                    <button type="button" class="spinner-btn up" onclick="this.parentNode.previousElementSibling.stepUp()"><i class="fa-solid fa-chevron-up"></i></button>
+                                                    <button type="button" class="spinner-btn down" onclick="this.parentNode.previousElementSibling.stepDown()"><i class="fa-solid fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="garage_cars">Garage Capacity (Cars) <span class="required">*</span></label>
+                                            <div class="number-wrapper">
+                                                <input type="number" id="garage_cars" name="garage_cars" placeholder="e.g. 2" min="0" required>
+                                                <div class="spinner-controls">
+                                                    <button type="button" class="spinner-btn up" onclick="this.parentNode.previousElementSibling.stepUp()"><i class="fa-solid fa-chevron-up"></i></button>
+                                                    <button type="button" class="spinner-btn down" onclick="this.parentNode.previousElementSibling.stepDown()"><i class="fa-solid fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="overall_qual">Overall Quality (1-10) <span class="required">*</span></label>
+                                            <div class="number-wrapper">
+                                                <input type="number" id="overall_qual" name="overall_qual" min="1" max="10" placeholder="e.g. 7" required>
+                                                <div class="spinner-controls">
+                                                    <button type="button" class="spinner-btn up" onclick="this.parentNode.previousElementSibling.stepUp()"><i class="fa-solid fa-chevron-up"></i></button>
+                                                    <button type="button" class="spinner-btn down" onclick="this.parentNode.previousElementSibling.stepDown()"><i class="fa-solid fa-chevron-down"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-actions">
+                                        <button type="reset" class="btn btn-secondary">Clear Fields</button>
+                                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                                            <i class="fa-solid fa-microchip"></i> Run Analysis
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="right-column">
+                            <!-- Upload Dataset Card -->
+                            <div class="card upload-card mb-4">
+                                <div class="card-header">
+                                    <h2>Dataset Configuration</h2>
+                                </div>
+                                <div class="card-body">
+                                    <form id="upload-form" enctype="multipart/form-data">
+                                        <p class="text-sm text-muted mb-3">Upload a new CSV dataset to retrain the model. Ensure the CSV contains all required features and 'SalePrice'.</p>
+                                        <div class="file-upload-wrapper">
+                                            <input type="file" id="dataset-upload" name="dataset" accept=".csv" required class="file-input">
+                                        </div>
+                                        <button type="submit" class="btn btn-secondary w-100 mt-3" id="upload-btn">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload & Retrain
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Output Card -->
+                            <div class="card result-card">
+                                <div class="card-header">
+                                    <h2>Valuation Output</h2>
+                                </div>
+                                <div class="card-body result-body">
+                                    <div id="initial-state" class="state-container">
+                                        <i class="fa-solid fa-arrow-left fa-2x text-muted"></i>
+                                        <p class="text-muted mt-2">Enter parameters and run analysis to generate a valuation.</p>
+                                    </div>
+
+                                    <div id="loading-state" class="state-container" style="display: none;">
+                                        <div class="spinner"></div>
+                                        <p>Processing model execution...</p>
+                                    </div>
+                                    
+                                    <div id="success-state" class="state-container" style="display: none;">
+                                        <div class="valuation-badge">Estimated Value</div>
+                                        <h3 id="result-value" class="valuation-amount">$0</h3>
+                                        <p class="confidence-interval"><i class="fa-solid fa-check-circle text-success"></i> Model convergence successful</p>
+                                    </div>
+
+                                    <div id="error-state" class="state-container" style="display: none;">
+                                        <i class="fa-solid fa-triangle-exclamation fa-2x text-danger"></i>
+                                        <p id="error-message" class="text-danger mt-2">An error occurred.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: MARKET TRENDS -->
+                <div id="view-trends" class="view-section" style="display: none;">
+                    <div class="page-header">
+                        <h1>Market Trends & Analytics</h1>
+                        <p>Insights and analytics extracted from the currently active dataset and regression model.</p>
+                    </div>
+                    
+                    <div class="stats-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="text-muted text-sm uppercase font-semibold">Total Records</p>
+                                <h3 id="stat-total" style="font-size: 2rem; color: var(--primary); margin-top: 0.5rem;">0</h3>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="text-muted text-sm uppercase font-semibold">Average Price</p>
+                                <h3 id="stat-avg" style="font-size: 2rem; color: var(--success); margin-top: 0.5rem;">$0</h3>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="text-muted text-sm uppercase font-semibold">Maximum Price</p>
+                                <h3 id="stat-max" style="font-size: 2rem; color: var(--text-main); margin-top: 0.5rem;">$0</h3>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="text-muted text-sm uppercase font-semibold">Minimum Price</p>
+                                <h3 id="stat-min" style="font-size: 2rem; color: var(--text-main); margin-top: 0.5rem;">$0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <!-- Chart 1: Feature Importance -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2>Model Feature Importance</h2>
+                            </div>
+                            <div class="card-body" style="height: 350px; position: relative;">
+                                <canvas id="importanceChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Chart 2: Price vs Quality -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h2>Average Price by Overall Quality</h2>
+                            </div>
+                            <div class="card-body" style="height: 350px; position: relative;">
+                                <canvas id="qualityChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Chart 3: Price Spread -->
+                        <div class="card" style="grid-column: 1 / -1;">
+                            <div class="card-header">
+                                <h2>Dataset Price Spread</h2>
+                            </div>
+                            <div class="card-body" style="height: 300px; position: relative;">
+                                <canvas id="priceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: REPORTS -->
+                <div id="view-reports" class="view-section" style="display: none;">
+                    <div class="page-header">
+                        <h1>Prediction Reports</h1>
+                        <p>Local history of recent property valuations.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Valuation History</h2>
+                        </div>
+                        <div class="card-body">
+                            <table class="w-100" style="text-align: left; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid var(--border-color);">
+                                        <th style="padding: 1rem 0;">Time</th>
+                                        <th style="padding: 1rem 0;">Area (sq ft)</th>
+                                        <th style="padding: 1rem 0;">Year</th>
+                                        <th style="padding: 1rem 0;">Beds / Baths</th>
+                                        <th style="padding: 1rem 0;">Predicted Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reports-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted" style="padding: 2rem 0;">No predictions made yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: SETTINGS -->
+                <div id="view-settings" class="view-section" style="display: none;">
+                    <div class="page-header">
+                        <h1>System Settings</h1>
+                        <p>Configure model parameters and application preferences.</p>
+                    </div>
+                    <div class="dashboard-grid">
+                        <div class="card form-card">
+                            <div class="card-header">
+                                <h2>Algorithm Parameters</h2>
+                            </div>
+                            <div class="card-body">
+                                <form id="settings-form">
+                                    <div class="form-group mb-4">
+                                        <label for="n_estimators">Random Forest Estimators (Trees)</label>
+                                        <p class="text-sm text-muted mb-2">Higher values provide better accuracy but take longer to train.</p>
+                                        <div class="number-wrapper">
+                                            <input type="number" id="n_estimators" name="n_estimators" value="100" min="10" max="1000" step="10">
+                                            <div class="spinner-controls">
+                                                <button type="button" class="spinner-btn up" onclick="this.parentNode.previousElementSibling.stepUp()"><i class="fa-solid fa-chevron-up"></i></button>
+                                                <button type="button" class="spinner-btn down" onclick="this.parentNode.previousElementSibling.stepDown()"><i class="fa-solid fa-chevron-down"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary" id="settings-btn">
+                                        <i class="fa-solid fa-save"></i> Apply & Retrain
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // Formatter
+        const currencyFormatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        });
+
+        // Theme Logic
+        function setTheme(theme) {
+            if (theme === 'system') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+            localStorage.setItem('theme', theme);
+            updateThemeButtons(theme);
+        }
+
+        function updateThemeButtons(theme) {
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.theme-btn[onclick="setTheme('${theme}')"]`).classList.add('active');
+        }
+
+        // Initialize Theme UI
+        updateThemeButtons(savedTheme);
+
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check" style="color: var(--success)"></i>' : '<i class="fa-solid fa-circle-exclamation" style="color: var(--danger)"></i>';
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 3000);
+        }
+
+        // Tab Switching Logic
+        const navItems = document.querySelectorAll('.nav-item');
+        const viewSections = document.querySelectorAll('.view-section');
+        const breadcrumb = document.getElementById('breadcrumb');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = item.getAttribute('data-target');
+                
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                
+                breadcrumb.innerHTML = `Models / <strong>${item.textContent.trim()}</strong>`;
+
+                viewSections.forEach(section => {
+                    if (section.id === target) {
+                        section.style.display = 'block';
+                    } else {
+                        section.style.display = 'none';
+                    }
+                });
+
+                if (target === 'view-trends') loadTrends();
+                if (target === 'view-reports') loadReports();
+            });
+        });
+
+        // 1. Valuation Logic
+        let predictionHistory = JSON.parse(localStorage.getItem('ames_predictions')) || [];
+
+        document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submit-btn');
+            const initialState = document.getElementById('initial-state');
+            const loadingState = document.getElementById('loading-state');
+            const successState = document.getElementById('success-state');
+            const errorState = document.getElementById('error-state');
+            const resultValue = document.getElementById('result-value');
+            const errorMessage = document.getElementById('error-message');
+
+            const formData = {
+                gr_liv_area: document.getElementById('gr_liv_area').value,
+                overall_qual: document.getElementById('overall_qual').value,
+                bedroom_abvgr: document.getElementById('bedroom_abvgr').value,
+                full_bath: document.getElementById('full_bath').value,
+                garage_cars: document.getElementById('garage_cars').value,
+                year_built: document.getElementById('year_built').value
+            };
+
+            btn.disabled = true;
+            initialState.style.display = 'none';
+            successState.style.display = 'none';
+            errorState.style.display = 'none';
+            loadingState.style.display = 'block';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                loadingState.style.display = 'none';
+
+                if (response.ok) {
+                    resultValue.textContent = currencyFormatter.format(data.predicted_price);
+                    successState.style.display = 'block';
+
+                    // Save to history
+                    predictionHistory.unshift({
+                        time: new Date().toLocaleString(),
+                        area: formData.gr_liv_area,
+                        year: formData.year_built,
+                        beds: formData.bedroom_abvgr,
+                        baths: formData.full_bath,
+                        value: currencyFormatter.format(data.predicted_price)
+                    });
+                    if (predictionHistory.length > 20) predictionHistory.pop();
+                    localStorage.setItem('ames_predictions', JSON.stringify(predictionHistory));
+                    showToast('Prediction successfully generated!');
+                } else {
+                    errorMessage.textContent = "Error: " + data.error;
+                    errorState.style.display = 'block';
+                    showToast('Prediction failed.', 'error');
+                }
+            } catch (error) {
+                loadingState.style.display = 'none';
+                errorMessage.textContent = "Connection Error: Failed to reach the server.";
+                errorState.style.display = 'block';
+                showToast('Connection error.', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('prediction-form').addEventListener('reset', () => {
+            document.getElementById('initial-state').style.display = 'block';
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('success-state').style.display = 'none';
+            document.getElementById('error-state').style.display = 'none';
+        });
+
+        // 2. Dataset Upload
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('dataset-upload');
+            const uploadBtn = document.getElementById('upload-btn');
+            
+            if (fileInput.files.length === 0) return;
+            const formData = new FormData();
+            formData.append('dataset', fileInput.files[0]);
+            
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+            
+            try {
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                const data = await response.json();
+                if (response.ok) {
+                    showToast(data.message);
+                    fileInput.value = '';
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (error) {
+                showToast("Connection Error: Failed to upload.", 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload & Retrain';
+            }
+        });
+
+        // 3. Trends Loader
+        let priceChartInst = null;
+        let qualityChartInst = null;
+        let importanceChartInst = null;
+        
+        async function loadTrends() {
+            try {
+                const res = await fetch('/stats');
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('stat-total').textContent = data.total_records.toLocaleString();
+                    document.getElementById('stat-avg').textContent = currencyFormatter.format(data.avg_price);
+                    document.getElementById('stat-max').textContent = currencyFormatter.format(data.max_price);
+                    document.getElementById('stat-min').textContent = currencyFormatter.format(data.min_price);
+
+                    const rootStyles = getComputedStyle(document.documentElement);
+                    const textColor = rootStyles.getPropertyValue('--text-main').trim() || '#0f172a';
+                    const gridColor = rootStyles.getPropertyValue('--border-color').trim() || '#e2e8f0';
+
+                    // Price Spread Chart
+                    const ctxPrice = document.getElementById('priceChart').getContext('2d');
+                    if(priceChartInst) priceChartInst.destroy();
+                    priceChartInst = new Chart(ctxPrice, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Min', 'Average', 'Max'],
+                            datasets: [{
+                                label: 'Price Spread (USD)',
+                                data: [data.min_price, data.avg_price, data.max_price],
+                                backgroundColor: ['#94a3b8', '#10b981', '#3b82f6'],
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { ticks: { color: textColor }, grid: { display: false } },
+                                y: { ticks: { color: textColor }, grid: { color: gridColor } }
+                            }
+                        }
+                    });
+
+                    // Quality vs Price Chart
+                    const ctxQual = document.getElementById('qualityChart').getContext('2d');
+                    if(qualityChartInst) qualityChartInst.destroy();
+                    qualityChartInst = new Chart(ctxQual, {
+                        type: 'line',
+                        data: {
+                            labels: data.quality_labels,
+                            datasets: [{
+                                label: 'Avg Price',
+                                data: data.quality_values,
+                                borderColor: '#8b5cf6',
+                                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { ticks: { color: textColor }, grid: { display: false } },
+                                y: { ticks: { color: textColor }, grid: { color: gridColor } }
+                            }
+                        }
+                    });
+
+                    // Feature Importance Chart
+                    const ctxImp = document.getElementById('importanceChart').getContext('2d');
+                    if(importanceChartInst) importanceChartInst.destroy();
+                    importanceChartInst = new Chart(ctxImp, {
+                        type: 'bar',
+                        data: {
+                            labels: data.feature_importance_labels,
+                            datasets: [{
+                                label: 'Relative Importance',
+                                data: data.feature_importance_values,
+                                backgroundColor: '#f59e0b',
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                                y: { ticks: { color: textColor }, grid: { display: false } }
+                            }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to fetch stats", err);
+            }
+        }
+
+        // 4. Reports Loader
+        function loadReports() {
+            const tbody = document.getElementById('reports-body');
+            if (predictionHistory.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding: 2rem 0;">No predictions made yet.</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            predictionHistory.forEach(pred => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = "1px solid var(--border-color)";
+                tr.innerHTML = `
+                    <td style="padding: 1rem 0; color: var(--text-muted); font-size: 0.875rem;">${pred.time}</td>
+                    <td style="padding: 1rem 0; font-weight: 500;">${pred.area}</td>
+                    <td style="padding: 1rem 0;">${pred.year}</td>
+                    <td style="padding: 1rem 0;">${pred.beds} / ${pred.baths}</td>
+                    <td style="padding: 1rem 0; color: var(--success); font-weight: 600;">${pred.value}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 5. Settings Logic
+        document.getElementById('settings-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('settings-btn');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Applying...';
+            
+            try {
+                const res = await fetch('/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        n_estimators: document.getElementById('n_estimators').value
+                    })
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    showToast(data.message);
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (err) {
+                showToast("Failed to update settings.", 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-save"></i> Apply & Retrain';
+            }
+        });
+    </script>
+</body>
+</html>
