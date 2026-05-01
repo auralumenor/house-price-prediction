@@ -1,9 +1,7 @@
 from flask import Flask, render_template, request, jsonify
-import joblib
 import pandas as pd
 import os
 from werkzeug.utils import secure_filename
-from train_model import train_and_save_model
 
 app = Flask(__name__)
 
@@ -13,15 +11,7 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Load the trained model
-MODEL_PATH = "model.joblib"
 ACTIVE_DATASET = "data/Ames_Housing_Data.csv"
-model = None
-if os.path.exists(MODEL_PATH):
-    try:
-        model = joblib.load(MODEL_PATH)
-    except Exception as e:
-        print(f"Error loading model: {e}")
 
 @app.route("/")
 def home():
@@ -29,7 +19,7 @@ def home():
 
 @app.route("/upload", methods=["POST"])
 def upload_dataset():
-    global model, ACTIVE_DATASET
+    global ACTIVE_DATASET
     if 'dataset' not in request.files:
         return jsonify({"error": "No file part"}), 400
     
@@ -43,10 +33,8 @@ def upload_dataset():
         file.save(filepath)
         
         try:
-            # Train the model with the new dataset
-            model = train_and_save_model(filepath)
             ACTIVE_DATASET = filepath
-            return jsonify({"message": "Dataset uploaded and model retrained successfully!"})
+            return jsonify({"message": "Dataset uploaded and set as active successfully!"})
         except Exception as e:
             return jsonify({"error": str(e)}), 400
     else:
@@ -54,25 +42,44 @@ def upload_dataset():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    global model
-    if model is None:
-        return jsonify({"error": "Model not loaded"}), 500
+    if not os.path.exists(ACTIVE_DATASET):
+        return jsonify({"error": "Active dataset not found"}), 500
 
     try:
         data = request.json
-        # Expecting JSON data matching the features:
-        # "Gr Liv Area", "Bedroom AbvGr", "Full Bath", "Garage Cars", "Overall Qual", "Year Built"
-        
-        sample_house = pd.DataFrame({
-            "Gr Liv Area": [int(data.get("gr_liv_area", 0))],
-            "Bedroom AbvGr": [int(data.get("bedroom_abvgr", 0))],
-            "Full Bath": [int(data.get("full_bath", 0))],
-            "Garage Cars": [int(data.get("garage_cars", 0))],
-            "Overall Qual": [int(data.get("overall_qual", 0))],
-            "Year Built": [int(data.get("year_built", 0))]
-        })
+        gr_liv_area = int(data.get("gr_liv_area", 0))
+        overall_qual = int(data.get("overall_qual", 5))
+        year_built = int(data.get("year_built", 1970))
+        bedroom_abvgr = int(data.get("bedroom_abvgr", 3))
+        full_bath = int(data.get("full_bath", 2))
+        garage_cars = int(data.get("garage_cars", 2))
 
-        predicted_price = model.predict(sample_house)[0]
+        # Advanced Data Analysis: Comparative Market Analysis (CMA)
+        # Find the most similar properties by calculating a similarity score
+        df = pd.read_csv(ACTIVE_DATASET)
+        
+        # Calculate standard deviations for normalization
+        std_area = df['Gr Liv Area'].std() or 1
+        std_qual = df['Overall Qual'].std() or 1
+        std_year = df['Year Built'].std() or 1
+        std_bed = df['Bedroom AbvGr'].std() or 1
+        std_bath = df['Full Bath'].std() or 1
+        std_garage = df['Garage Cars'].std() or 1
+        
+        # Calculate distance (lower is more similar)
+        df['similarity_score'] = (
+            abs(df['Gr Liv Area'] - gr_liv_area) / std_area +
+            abs(df['Overall Qual'] - overall_qual) / std_qual +
+            abs(df['Year Built'] - year_built) / std_year +
+            abs(df['Bedroom AbvGr'] - bedroom_abvgr) / std_bed +
+            abs(df['Full Bath'] - full_bath) / std_bath +
+            abs(df['Garage Cars'] - garage_cars) / std_garage
+        )
+        
+        # Get the top 5 most similar comparable properties
+        similar_properties = df.sort_values('similarity_score').head(5)
+        predicted_price = similar_properties['SalePrice'].mean()
+        
         return jsonify({"predicted_price": round(predicted_price, 2)})
 
     except Exception as e:
@@ -80,7 +87,6 @@ def predict():
 
 @app.route("/stats", methods=["GET"])
 def get_stats():
-    global model
     try:
         if not os.path.exists(ACTIVE_DATASET):
             return jsonify({"error": "Dataset not found"}), 404
@@ -93,6 +99,8 @@ def get_stats():
         max_price = float(round(df["SalePrice"].max(), 2))
         min_price = float(round(df["SalePrice"].min(), 2))
         total_records = int(len(df))
+        total_volume = float(df["SalePrice"].sum())
+        avg_area = float(round(df["Gr Liv Area"].mean(), 2))
         
         # Price by Quality
         if "Overall Qual" in df.columns:
@@ -101,25 +109,42 @@ def get_stats():
             quality_values = [float(v) for v in quality_grouped.values]
         else:
             quality_labels, quality_values = [], []
+
+        if "Yr Sold" in df.columns and "Mo Sold" in df.columns:
+            df_sorted = df.sort_values(by=["Yr Sold", "Mo Sold"])
+            df_sorted['Period'] = df_sorted['Yr Sold'].astype(str) + "-" + df_sorted['Mo Sold'].astype(str).str.zfill(2) + "-01"
             
-        # Feature Importances from the active model
-        features = ["Gr Liv Area", "Bedroom AbvGr", "Full Bath", "Garage Cars", "Overall Qual", "Year Built"]
-        feature_importance = {}
-        if model is not None and hasattr(model, 'feature_importances_'):
-            importances = [float(v) for v in model.feature_importances_]
-            feature_importance = dict(zip(features, importances))
-            # Sort by importance descending
-            feature_importance = dict(sorted(feature_importance.items(), key=lambda item: item[1], reverse=True))
+            candle_data = df_sorted.groupby('Period').agg(
+                Open=('SalePrice', 'first'),
+                High=('SalePrice', 'max'),
+                Low=('SalePrice', 'min'),
+                Close=('SalePrice', 'last'),
+                Volume=('SalePrice', 'sum'),
+                Transactions=('SalePrice', 'count')
+            ).reset_index()
+            
+            candle_dict = candle_data.rename(columns={
+                'Period': 'x',
+                'Open': 'o',
+                'High': 'h',
+                'Low': 'l',
+                'Close': 'c',
+                'Volume': 'volume',
+                'Transactions': 'transactions'
+            }).to_dict(orient='records')
+        else:
+            candle_dict = []
 
         return jsonify({
             "avg_price": avg_price,
             "max_price": max_price,
             "min_price": min_price,
             "total_records": total_records,
+            "total_volume": total_volume,
+            "avg_area": avg_area,
             "quality_labels": quality_labels,
             "quality_values": quality_values,
-            "feature_importance_labels": list(feature_importance.keys()),
-            "feature_importance_values": list(feature_importance.values())
+            "candle_data": candle_dict
         })
     except Exception as e:
         import traceback
@@ -128,30 +153,7 @@ def get_stats():
 
 @app.route("/settings", methods=["POST"])
 def update_settings():
-    global model
-    try:
-        data = request.json
-        n_estimators = int(data.get("n_estimators", 100))
-        
-        # Retrain model with new settings
-        from sklearn.ensemble import RandomForestRegressor
-        import joblib
-        from sklearn.model_selection import train_test_split
-        
-        df = pd.read_csv(ACTIVE_DATASET)
-        features = ["Gr Liv Area", "Bedroom AbvGr", "Full Bath", "Garage Cars", "Overall Qual", "Year Built"]
-        df = df[features + ["SalePrice"]].dropna()
-        X = df[features]
-        y = df["SalePrice"]
-        
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        model = RandomForestRegressor(n_estimators=n_estimators, random_state=42)
-        model.fit(X_train, y_train)
-        joblib.dump(model, MODEL_PATH)
-        
-        return jsonify({"message": f"Model updated with {n_estimators} estimators."})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    return jsonify({"message": "Settings updated (Data analysis mode active)."})
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

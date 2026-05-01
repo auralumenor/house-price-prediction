@@ -1,36 +1,34 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, r2_score
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Step 1: Load dataset
 df = pd.read_csv("data/Ames_Housing_Data.csv")
-features = ["Gr Liv Area", "Bedroom AbvGr", "Full Bath", "Garage Cars", "Overall Qual", "Year Built"]
-df = df[features + ["SalePrice"]].dropna()
-X = df[features]
-y = df["SalePrice"]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-lin_model = LinearRegression()
-lin_model.fit(X_train, y_train)
-rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-rf_model.fit(X_train, y_train)
-lin_pred = lin_model.predict(X_test)
-rf_pred = rf_model.predict(X_test)
 
-print("Linear Regression:")
-print("  MSE:", mean_squared_error(y_test, lin_pred))
-print("  R²:", r2_score(y_test, lin_pred))
+# Step 2: Basic analysis
+print("Dataset shape:", df.shape)
+print("Columns:", df.columns.tolist())
 
-print("\nRandom Forest:")
-print("  MSE:", mean_squared_error(y_test, rf_pred))
-print("  R²:", r2_score(y_test, rf_pred))
-sample_house = pd.DataFrame({
-    "Gr Liv Area": [1500],
-    "Bedroom AbvGr": [3],
-    "Full Bath": [2],
-    "Garage Cars": [1],
-    "Overall Qual": [6],
-    "Year Built": [2005]
-})
+# Step 3: Price distribution
+plt.hist(df["SalePrice"], bins=30, color="skyblue", edgecolor="black")
+plt.title("House Price Distribution")
+plt.xlabel("Price")
+plt.ylabel("Count")
+plt.show()
 
-predicted_price = rf_model.predict(sample_house)[0]
-print(f"\nPredicted Price for sample house: ₹{predicted_price:,.0f}")
+# Step 4: Relationship between area and price
+plt.scatter(df["Gr Liv Area"], df["SalePrice"], alpha=0.5, color="green")
+plt.title("Living Area vs Sale Price")
+plt.xlabel("Living Area (sq ft)")
+plt.ylabel("Sale Price")
+plt.show()
+
+# Step 5: Simple prediction using average price per sq ft
+df["PricePerSqFt"] = df["SalePrice"] / df["Gr Liv Area"]
+avg_price_per_sqft = np.mean(df["PricePerSqFt"])
+print("Average Price per Sq Ft:", avg_price_per_sqft)
+
+# Predict price for a sample house
+sample_area = 1500
+predicted_price = sample_area * avg_price_per_sqft
+print(f"Predicted Price for {sample_area} sq ft house: ₹{predicted_price:,.0f}")

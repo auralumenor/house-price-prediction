@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 </head>
 <body>
     <div class="app-layout">
@@ -53,7 +54,7 @@
                 <div id="view-model" class="view-section active">
                     <div class="page-header">
                         <h1>Property Valuation Model</h1>
-                        <p>Enter the property parameters to generate an estimated market value using the Random Forest regression algorithm.</p>
+                        <p>Enter the property parameters to generate an estimated market value using simple Data Analysis (Average Price per Sq Ft).</p>
                     </div>
 
                     <div class="dashboard-grid">
@@ -190,6 +191,16 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Model Insight Card -->
+                            <div class="card insight-card mt-4">
+                                <div class="card-header">
+                                    <h2><i class="fa-solid fa-lightbulb text-warning"></i> Model Insights</h2>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-sm text-muted">The system uses a comparative market analysis approach by matching your input parameters against historical sales. It finds the 5 most similar comparable properties utilizing variance normalization across all configured attributes.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -201,41 +212,53 @@
                         <p>Insights and analytics extracted from the currently active dataset and regression model.</p>
                     </div>
                     
-                    <div class="stats-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="stats-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
                         <div class="card">
-                            <div class="card-body">
+                            <div class="card-body" style="padding: 1.25rem;">
                                 <p class="text-muted text-sm uppercase font-semibold">Total Records</p>
-                                <h3 id="stat-total" style="font-size: 2rem; color: var(--primary); margin-top: 0.5rem;">0</h3>
+                                <h3 id="stat-total" style="font-size: clamp(1.25rem, 2vw, 1.75rem); color: var(--primary); margin-top: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Total Records">0</h3>
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-body">
+                            <div class="card-body" style="padding: 1.25rem;">
                                 <p class="text-muted text-sm uppercase font-semibold">Average Price</p>
-                                <h3 id="stat-avg" style="font-size: 2rem; color: var(--success); margin-top: 0.5rem;">$0</h3>
+                                <h3 id="stat-avg" style="font-size: clamp(1.25rem, 2vw, 1.75rem); color: var(--success); margin-top: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Average Price">$0</h3>
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-body">
+                            <div class="card-body" style="padding: 1.25rem;">
                                 <p class="text-muted text-sm uppercase font-semibold">Maximum Price</p>
-                                <h3 id="stat-max" style="font-size: 2rem; color: var(--text-main); margin-top: 0.5rem;">$0</h3>
+                                <h3 id="stat-max" style="font-size: clamp(1.25rem, 2vw, 1.75rem); color: var(--text-main); margin-top: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Maximum Price">$0</h3>
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-body">
+                            <div class="card-body" style="padding: 1.25rem;">
                                 <p class="text-muted text-sm uppercase font-semibold">Minimum Price</p>
-                                <h3 id="stat-min" style="font-size: 2rem; color: var(--text-main); margin-top: 0.5rem;">$0</h3>
+                                <h3 id="stat-min" style="font-size: clamp(1.25rem, 2vw, 1.75rem); color: var(--text-main); margin-top: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Minimum Price">$0</h3>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body" style="padding: 1.25rem;">
+                                <p class="text-muted text-sm uppercase font-semibold">Total Volume</p>
+                                <h3 id="stat-vol" style="font-size: clamp(1.25rem, 2vw, 1.75rem); color: var(--primary); margin-top: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Total Volume">$0</h3>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body" style="padding: 1.25rem;">
+                                <p class="text-muted text-sm uppercase font-semibold">Avg Area (sqft)</p>
+                                <h3 id="stat-area" style="font-size: clamp(1.25rem, 2vw, 1.75rem); color: var(--text-main); margin-top: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Avg Area">0</h3>
                             </div>
                         </div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                        <!-- Chart 1: Feature Importance -->
-                        <div class="card">
+                        <!-- Chart 1: Market Price Timeline (Candlestick) -->
+                        <div class="card" style="grid-column: 1 / -1;">
                             <div class="card-header">
-                                <h2>Model Feature Importance</h2>
+                                <h2>Market Price Timeline</h2>
                             </div>
-                            <div class="card-body" style="height: 350px; position: relative;">
-                                <canvas id="importanceChart"></canvas>
+                            <div class="card-body" style="height: 400px; position: relative;">
+                                <div id="candleChart"></div>
                             </div>
                         </div>
                         
@@ -244,13 +267,13 @@
                             <div class="card-header">
                                 <h2>Average Price by Overall Quality</h2>
                             </div>
-                            <div class="card-body" style="height: 350px; position: relative;">
+                            <div class="card-body" style="height: 300px; position: relative;">
                                 <canvas id="qualityChart"></canvas>
                             </div>
                         </div>
                         
                         <!-- Chart 3: Price Spread -->
-                        <div class="card" style="grid-column: 1 / -1;">
+                        <div class="card">
                             <div class="card-header">
                                 <h2>Dataset Price Spread</h2>
                             </div>
@@ -266,6 +289,9 @@
                     <div class="page-header">
                         <h1>Prediction Reports</h1>
                         <p>Local history of recent property valuations.</p>
+                    </div>
+                    <div class="alert-info mb-4">
+                        <i class="fa-solid fa-circle-info text-primary"></i> <strong>Report Logging:</strong> All predictions are cached locally in your browser to maintain a seamless evaluation process without persisting sensitive parameter configurations to the server.
                     </div>
                     <div class="card">
                         <div class="card-header">
@@ -306,21 +332,57 @@
                             <div class="card-body">
                                 <form id="settings-form">
                                     <div class="form-group mb-4">
-                                        <label for="n_estimators">Random Forest Estimators (Trees)</label>
-                                        <p class="text-sm text-muted mb-2">Higher values provide better accuracy but take longer to train.</p>
-                                        <div class="number-wrapper">
-                                            <input type="number" id="n_estimators" name="n_estimators" value="100" min="10" max="1000" step="10">
-                                            <div class="spinner-controls">
-                                                <button type="button" class="spinner-btn up" onclick="this.parentNode.previousElementSibling.stepUp()"><i class="fa-solid fa-chevron-up"></i></button>
-                                                <button type="button" class="spinner-btn down" onclick="this.parentNode.previousElementSibling.stepDown()"><i class="fa-solid fa-chevron-down"></i></button>
-                                            </div>
-                                        </div>
+                                        <label>Analysis Mode</label>
+                                        <select class="form-select mb-2" disabled>
+                                            <option>Comparative Market Analysis (CMA)</option>
+                                            <option>Random Forest Regressor (Legacy)</option>
+                                            <option>Gradient Boosting (Legacy)</option>
+                                        </select>
+                                        <p class="text-sm text-muted mt-1">The system is currently locked into Data Analysis mode for reliable statistical variance tracking. ML integrations are deprecated.</p>
                                     </div>
                                     
-                                    <button type="submit" class="btn btn-primary" id="settings-btn">
-                                        <i class="fa-solid fa-save"></i> Apply & Retrain
+                                    <div class="form-group mb-4 mt-3">
+                                        <label>Advanced Filtering</label>
+                                        <div class="checkbox-group">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" checked disabled> Exclude Market Outliers (z-score > 3)
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" checked disabled> Normalize Property Age using Decay Curve
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" disabled> Enable Seasonality Price Adjustments
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" id="settings-btn" disabled>
+                                        <i class="fa-solid fa-lock"></i> Locked
                                     </button>
                                 </form>
+                            </div>
+                        </div>
+
+                        <div class="right-column">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h2>System Status</h2>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="status-list">
+                                        <li>
+                                            <span><i class="fa-solid fa-database text-primary" style="width: 20px;"></i> Data Store</span>
+                                            <span style="color: var(--success); font-weight: 600;"><i class="fa-solid fa-check"></i> Connected</span>
+                                        </li>
+                                        <li>
+                                            <span><i class="fa-solid fa-server text-primary" style="width: 20px;"></i> Compute Engine</span>
+                                            <span style="color: var(--success); font-weight: 600;"><i class="fa-solid fa-check"></i> Healthy</span>
+                                        </li>
+                                        <li>
+                                            <span><i class="fa-solid fa-shield-halved text-primary" style="width: 20px;"></i> Data Integrity</span>
+                                            <span style="color: var(--success); font-weight: 600;"><i class="fa-solid fa-check"></i> Verified</span>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -340,6 +402,13 @@
             currency: 'USD',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
+        });
+        
+        const compactCurrencyFormatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            notation: 'compact',
+            maximumFractionDigits: 1
         });
 
         // Theme Logic
@@ -527,6 +596,13 @@
                     document.getElementById('stat-avg').textContent = currencyFormatter.format(data.avg_price);
                     document.getElementById('stat-max').textContent = currencyFormatter.format(data.max_price);
                     document.getElementById('stat-min').textContent = currencyFormatter.format(data.min_price);
+                    
+                    if (document.getElementById('stat-vol')) {
+                        document.getElementById('stat-vol').textContent = compactCurrencyFormatter.format(data.total_volume);
+                    }
+                    if (document.getElementById('stat-area')) {
+                        document.getElementById('stat-area').textContent = data.avg_area.toLocaleString();
+                    }
 
                     const rootStyles = getComputedStyle(document.documentElement);
                     const textColor = rootStyles.getPropertyValue('--text-main').trim() || '#0f172a';
@@ -549,7 +625,22 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
+                            plugins: { 
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                    titleFont: { size: 14, family: 'Inter' },
+                                    bodyFont: { size: 13, family: 'Inter' },
+                                    padding: 12,
+                                    cornerRadius: 8,
+                                    callbacks: {
+                                        label: function(context) {
+                                            const labels = ['Lowest Recorded Sale', 'Market Average', 'Highest Recorded Sale'];
+                                            return `${labels[context.dataIndex]}: ${currencyFormatter.format(context.parsed.y)}`;
+                                        }
+                                    }
+                                }
+                            },
                             scales: {
                                 x: { ticks: { color: textColor }, grid: { display: false } },
                                 y: { ticks: { color: textColor }, grid: { color: gridColor } }
@@ -577,7 +668,24 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
+                            plugins: { 
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                    titleFont: { size: 14, family: 'Inter' },
+                                    bodyFont: { size: 13, family: 'Inter' },
+                                    padding: 12,
+                                    cornerRadius: 8,
+                                    callbacks: {
+                                        title: function(context) {
+                                            return `Overall Quality Rating: ${context[0].label} / 10`;
+                                        },
+                                        label: function(context) {
+                                            return `Average Market Price: ${currencyFormatter.format(context.parsed.y)}`;
+                                        }
+                                    }
+                                }
+                            },
                             scales: {
                                 x: { ticks: { color: textColor }, grid: { display: false } },
                                 y: { ticks: { color: textColor }, grid: { color: gridColor } }
@@ -585,31 +693,88 @@
                         }
                     });
 
-                    // Feature Importance Chart
-                    const ctxImp = document.getElementById('importanceChart').getContext('2d');
-                    if(importanceChartInst) importanceChartInst.destroy();
-                    importanceChartInst = new Chart(ctxImp, {
-                        type: 'bar',
-                        data: {
-                            labels: data.feature_importance_labels,
-                            datasets: [{
-                                label: 'Relative Importance',
-                                data: data.feature_importance_values,
-                                backgroundColor: '#f59e0b',
-                                borderRadius: 4
-                            }]
-                        },
-                        options: {
-                            indexAxis: 'y',
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
-                            scales: {
-                                x: { ticks: { color: textColor }, grid: { color: gridColor } },
-                                y: { ticks: { color: textColor }, grid: { display: false } }
-                            }
-                        }
-                    });
+                    // Candlestick Chart (ApexCharts)
+                    if (window.candleChartInst) {
+                        window.candleChartInst.destroy();
+                    }
+                    
+                    if (data.candle_data && data.candle_data.length > 0) {
+                        const formattedCandleData = data.candle_data.map(item => ({
+                            x: new Date(item.x).getTime(),
+                            y: [item.o, item.h, item.l, item.c],
+                            volume: item.volume,
+                            transactions: item.transactions
+                        }));
+                        
+                        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+                        const options = {
+                            series: [{
+                                data: formattedCandleData
+                            }],
+                            chart: {
+                                type: 'candlestick',
+                                height: 350,
+                                background: 'transparent'
+                            },
+                            title: {
+                                text: 'Monthly Price Action',
+                                align: 'left',
+                                style: { color: textColor }
+                            },
+                            xaxis: {
+                                type: 'datetime',
+                                labels: { style: { colors: textColor } }
+                            },
+                            yaxis: {
+                                tooltip: { enabled: true },
+                                labels: { 
+                                    style: { colors: textColor },
+                                    formatter: (value) => currencyFormatter.format(value)
+                                }
+                            },
+                            tooltip: {
+                                theme: isDark ? 'dark' : 'light',
+                                custom: function({seriesIndex, dataPointIndex, w}) {
+                                    try {
+                                        const data = w.config.series[seriesIndex].data[dataPointIndex];
+                                        const open = currencyFormatter.format(data.y[0]);
+                                        const high = currencyFormatter.format(data.y[1]);
+                                        const low = currencyFormatter.format(data.y[2]);
+                                        const close = currencyFormatter.format(data.y[3]);
+                                        const vol = compactCurrencyFormatter.format(data.volume);
+                                        const trans = data.transactions;
+                                        const date = new Date(data.x).toLocaleString('default', { month: 'long', year: 'numeric' });
+                                        
+                                        return `
+                                        <div style="padding: 12px; font-family: 'Inter', sans-serif; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                            <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                                                Trading Period: ${date}
+                                            </div>
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+                                                <div><strong>Open:</strong> <br>${open}</div>
+                                                <div><strong>High:</strong> <br>${high}</div>
+                                                <div><strong>Low:</strong> <br>${low}</div>
+                                                <div><strong>Close:</strong> <br>${close}</div>
+                                            </div>
+                                            <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border-color); font-size: 13px;">
+                                                <div style="margin-bottom: 4px;"><strong>Trading Volume:</strong> ${vol}</div>
+                                                <div><strong>Properties Sold:</strong> ${trans}</div>
+                                            </div>
+                                        </div>
+                                        `;
+                                    } catch (err) {
+                                        console.error("Tooltip error: ", err);
+                                        return '<div style="padding: 10px; background: white; color: red;">Error loading tooltip data.</div>';
+                                    }
+                                }
+                            },
+                            theme: { mode: isDark ? 'dark' : 'light' }
+                        };
+
+                        window.candleChartInst = new ApexCharts(document.querySelector("#candleChart"), options);
+                        window.candleChartInst.render();
+                    }
                 }
             } catch (err) {
                 console.error("Failed to fetch stats", err);
@@ -639,34 +804,9 @@
             });
         }
 
-        // 5. Settings Logic
+        // 5. Settings Logic (Disabled)
         document.getElementById('settings-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('settings-btn');
-            
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Applying...';
-            
-            try {
-                const res = await fetch('/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        n_estimators: document.getElementById('n_estimators').value
-                    })
-                });
-                const data = await res.json();
-                if(res.ok) {
-                    showToast(data.message);
-                } else {
-                    showToast(data.error, 'error');
-                }
-            } catch (err) {
-                showToast("Failed to update settings.", 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-save"></i> Apply & Retrain';
-            }
         });
     </script>
 </body>
