@@ -6,7 +6,11 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 
 # Configure upload folder
-UPLOAD_FOLDER = 'data'
+if os.environ.get('VERCEL') == '1':
+    UPLOAD_FOLDER = '/tmp/data'
+else:
+    UPLOAD_FOLDER = 'data'
+
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER

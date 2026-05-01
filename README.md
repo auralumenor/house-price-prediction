@@ -1,25 +1,24 @@
 # Enterprise Property Valuation Analytics 🏢📊
 
-An enterprise-grade house price prediction platform powered by machine learning (Random Forest Regression) and a beautifully designed, responsive web dashboard.
+An enterprise-grade house price prediction platform powered by Data Analytics (Comparative Market Analysis) and a beautifully designed, responsive web dashboard.
 
 ## 🌟 Key Features
 
-- **Advanced Machine Learning**: Utilizes `scikit-learn`'s Random Forest regression algorithm to process multiple housing metrics for highly accurate market valuations.
+- **Advanced Data Analysis**: Utilizes Comparative Market Analysis (CMA) to calculate similarity scores across housing metrics for highly accurate market valuations.
 - **Enterprise Dashboard UI**: Modern, modular interface featuring Light/Dark/System theme switching, elegant CSS animations, and Toast popup notifications.
-- **Dynamic Dataset Retraining**: Upload new CSV datasets directly from the UI. The backend automatically processes the new data and retrains the AI model on the fly.
+- **Dynamic Dataset Retraining**: Upload new CSV datasets directly from the UI. The backend automatically processes the new data to update predictions on the fly.
 - **Real-Time Market Analytics**: Interactive Chart.js visualizations that map:
-  - Model Feature Importance
   - Average Price by Overall Quality
   - Dataset Price Spread Analysis
-- **Algorithm Configuration**: Fine-tune the underlying Random Forest hyper-parameters (e.g., Number of Estimators) directly from the dashboard settings.
+- **Vercel Ready**: Pre-configured for seamless serverless deployment on Vercel.
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python, Flask, Pandas, Joblib
-- **Machine Learning**: scikit-learn (RandomForestRegressor)
+- **Backend**: Python, Flask, Pandas, Werkzeug
 - **Frontend**: HTML5, CSS3 (Custom Variables & Grid), Vanilla JavaScript
-- **Data Visualization**: Chart.js
+- **Data Visualization**: Chart.js, ApexCharts
 - **Icons**: FontAwesome 6
+- **Deployment**: Vercel
 
 ## 🚀 Quick Start Guide
 
@@ -35,26 +34,28 @@ Ensure you have Python 3.8+ installed, then run:
 pip install -r requirements.txt
 ```
 
-### 3. Initialize the Model
-Before running the application server, you need to build the initial machine learning model.
-```bash
-python train_model.py
-```
-*This script will compile `model.joblib` using the default Ames Housing dataset.*
-
-### 4. Run the Server
+### 3. Run the Server Locally
 ```bash
 python app.py
 ```
 Navigate to `http://127.0.0.1:5000` in your web browser to access the dashboard.
 
+### 4. Deploy to Vercel
+This project is configured for Vercel. To deploy:
+```bash
+npm i -g vercel
+vercel deploy
+```
+Or connect your GitHub repository directly via the Vercel Dashboard.
+
 ## 📂 Project Structure
 
 ```text
 ├── app.py                 # Core Flask application and REST API endpoints
-├── train_model.py         # Machine learning training pipeline and data validation
+├── house_price.py         # Data exploration and basic analysis script
 ├── requirements.txt       # Project dependencies
-├── .gitignore             # Configured to ignore local environments and model artifacts
+├── vercel.json            # Vercel serverless deployment configuration
+├── .gitignore             # Configured to ignore local environments
 ├── data/                  # Directory storing CSV datasets
 ├── static/
 │   └── style.css          # Extensive CSS architecture (Themes, Grids, Animations)
